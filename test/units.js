@@ -2,47 +2,56 @@
 require('dotenv').config();
 process.env.NODE_ENV = 'test';
 
-const getTickers = require('../app/apis/getTickers')
-const getEOD = require('../app/apis/getEOD')
+const Grid = require('../app/gridModel/grid')
+
+const isValidEmailFormat = require('../app/validation/emailValidator')
 
 //Require the dev-dependencies
 let chai = require('chai');
-let chaiHttp = require('chai-http');
-let server = require('../server');
-let should = chai.should();
 let expect = chai.expect;
 
-chai.use(chaiHttp);
-
-//Our parent block
-describe('Create dataset', () => {
+describe('Create Grid', () => {
+	const _grid = new Grid()
+	const grid = _grid.grid
+	console.log('GRID')
+	console.table(grid)
  /*
   * Test the dataset
   */
-  describe('/GET tickers', () => {
-	  it('it should GET an array of tickers', async (done) => {
-		getTickers().then((res)=>{
-				expect(res.status).to.equal(200);
-				expect(res.data.data).to.exist;
-				expect(res.data.data).to.an('array');
-				expect(res.data.data.length).to.be.greaterThan(0)
-				expect(res.data.data[0].name).to.exist;
-			})
+  describe('Grid functionality', () => {
+	  it('it should be a 5x5 grid', async (done) => {
+		expect(grid.length).to.equal(5)
+		expect(grid[0].length).to.equal(5)
+		done()
+	  });
+	  it('it should contain one X target', async (done) => {
+		expect(grid.reduce((t,n)=>t+n.reduce((s,m)=>m=='X'?s+1:s,0),0)).to.equal(1)
+		done()
+	  });
+	  it('it should stop you from leaving grid', async (done) => {
+		try {
+			_grid.checkLocation('right')
+		  } catch (error) {
+			expect(error.message).to.include('Out of range');
+		  }
+		  finally
+		  {
 			done()
-	  });;
-  });
-  describe('/GET EOD prices', () => {
-	  it('it should GET an array of latest prices', async (done) => {
-		getEOD('msft','aapl').then((res)=>{
-				expect(res.status).to.equal(200);
-				expect(res.data.data).to.exist;
-				expect(res.data.data).to.an('array');
-				expect(res.data.data.length).to.be.greaterThan(0)
-				expect(res.data.data[0].close).to.exist;
-			})
-			done()
+		  }
 	  });
   });
 
-});
   
+  describe('Email validation', () => {
+	it('it should fail empty string & basic format test xxx@yyy.something', async (done) => {
+
+		expect(isValidEmailFormat('')).to.be.false
+		expect(isValidEmailFormat('someString@email')).to.be.false
+		done()
+	});
+	it('passes sensible format', async (done) => {
+		expect(isValidEmailFormat('someString@email.domain')).to.be.true
+	  done()
+	});
+});
+});
